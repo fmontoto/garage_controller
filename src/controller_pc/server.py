@@ -2,9 +2,9 @@ import logging
 import serial
 import sys
 import threading
-import time
 
 from flask import Flask
+
 
 app = Flask(__name__)
 
@@ -13,6 +13,7 @@ dev_path = '/dev/cu.usbmodem1411'
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("server")
+
 
 class DoorInterface():
     IS_ALIVE = b'AL'
@@ -24,8 +25,8 @@ class DoorInterface():
         self._serial = self._StartSerial(serial_port)
         self.lock = threading.Lock()
         #TODO(fmontoto): Be smarter to wait for the connection to be ready.
-        import time
-        time.sleep(2)
+        from time import sleep
+        sleep(2)
         self._serial.reset_input_buffer()
         self._serial.reset_output_buffer()
         if not self.IsAlive():
@@ -60,51 +61,46 @@ class DoorInterface():
             return bytes_got == b'YES'
 
     @staticmethod
-    def _StartSerial(port=dev_path, baud_rate=9600):
-        parity = serial.PARITY_NONE
-        stop_bits = serial.STOPBITS_ONE
-        byte_size = serial.EIGHTBITS
-        timeout = 10 # seconds
-
+    def _StartSerial(port=dev_path, baud_rate=9600, timeout_sec=10):
         return serial.Serial(
                 port = port,
                 baudrate=baud_rate,
-                parity=parity,
-                stopbits=stop_bits,
-                bytesize=byte_size,
-                timeout=timeout
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=timeout_sec
         )
 
-@app.route('/door/open', methods=['GET', 'POST'])
+
+@app.route('/door/open', methods=['POST'])
 def door_open_handler():
-    was_door_opened = door_interface.OpenDoor()
-    if was_door_opened:
+    if door_interface.OpenDoor():
         return 'Door opened!'
     else:
         return 'Door not opened, maybe already opened?'
 
-@app.route('/door/close', methods=['GET', 'POST'])
+
+@app.route('/door/close', methods=['POST'])
 def door_close_handler():
-    was_door_closed = door_interface.CloseDoor()
-    if was_door_closed:
+    if door_interface.CloseDoor():
         return 'Door closed!'
     else:
         return 'Door not closed, maybe was already closed?'
 
+
 @app.route('/door/status')
 def door_status_handler():
-    is_open = door_interface.IsDoorOpen()
-    if is_open:
+    if door_interface.IsDoorOpen():
         return "Door is open!"
     else:
         return "Door is closed!"
 
+
 @app.route('/')
 def index_handler():
     ret = ''
-    is_door_open = door_interface.IsDoorOpen()
-    if is_door_open:
-        ret += 'Door is open!\n'
+    if door_interface.IsDoorOpen():
+        ret += 'Door is open!'
     else:
         ret += 'Door is closed!'
 
@@ -118,12 +114,14 @@ def index_handler():
     '''
     return ret
 
+
 def main():
     if len(sys.argv) < 3:
         sys.exit('Usage: %s http-port arduino-dev' % sys.argv[0])
     global door_interface
     door_interface = DoorInterface()
     app.run(host='0.0.0.0')
+
 
 if __name__ == '__main__':
     main()
