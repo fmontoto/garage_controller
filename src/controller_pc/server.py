@@ -9,7 +9,7 @@ from flask import Flask
 app = Flask(__name__)
 
 door_interface = None
-dev_path = '/dev/cu.usbmodem1411'
+dev_path = '/dev/ttyUSB1'
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("server")
@@ -119,8 +119,8 @@ def main():
     if len(sys.argv) < 3:
         sys.exit('Usage: %s http-port arduino-dev' % sys.argv[0])
     global door_interface
-    door_interface = DoorInterface()
-    app.run(host='0.0.0.0')
+    door_interface = DoorInterface(sys.argv[2])
+    app.run(host='0.0.0.0', port=int(sys.argv[1]))
 
 
 if __name__ == '__main__':

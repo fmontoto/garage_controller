@@ -1,0 +1,15 @@
+[Unit]
+Description=Garage controller server
+
+[Service]
+User=root
+Group=root
+
+Type=simple
+ExecStart=/usr/bin/env bash -c 'cd /home/pi/Projects/garage_controller/src/controller_pc ; source env/bin/activate; python server.py 5000 /dev/ttyUSB0'
+TimeoutStopSec=6
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
